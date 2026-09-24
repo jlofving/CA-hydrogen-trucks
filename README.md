@@ -155,3 +155,11 @@ what was passed to it.
 
 `figures/FIGURE_STYLE.md` documents the colour and typography conventions and the
 reasoning behind them; `figures/pub_theme.jl` is the machine-readable version.
+
+## License
+
+MIT — see [`LICENSE`](LICENSE). Copyright (c) 2026 Joel Löfving.
+
+You are free to use, modify and redistribute this code, including commercially,
+provided the copyright notice is retained. If you use it in published work,
+please cite the accompanying article.
