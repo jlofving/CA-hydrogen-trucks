@@ -1,0 +1,27 @@
+{
+  "title": "Hydrogen truck and refuelling infrastructure rollout model",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "mit",
+  "creators": [
+    {
+      "name": "Löfving, Joel",
+      "orcid": "0009-0008-9059-1276",
+      "affiliation": "Chalmers University of Technology, Department of Environmental and Energy Sciences"
+    }
+  ],
+  "description": "<p>A Monte Carlo model of heavy-duty fuel-cell truck adoption in California and the hydrogen refuelling and production capacity built to serve it.</p><p>The model propagates uncertainty in station and production investment decisions through a delivered hydrogen price build-up, a total cost of ownership comparison against a diesel baseline, and a social welfare accounting that covers climate damages, avoided air-quality damages and public policy expenditure. Policy instruments represented include the Low Carbon Fuel Standard, the Hydrogen Refueling Infrastructure credit, the 45V production tax credit and vehicle purchase incentives.</p><p>This is the code release accompanying the journal article. It contains the model, its input configuration as JSON, and every script that produces a figure or table in the paper. Package versions are pinned by Manifest.toml so the published results are reproducible.</p>",
+  "keywords": [
+    "hydrogen",
+    "heavy-duty trucks",
+    "fuel cell electric vehicles",
+    "refuelling infrastructure",
+    "Monte Carlo simulation",
+    "total cost of ownership",
+    "marginal abatement cost",
+    "Low Carbon Fuel Standard",
+    "California",
+    "Julia"
+  ],
+  "language": "eng"
+}
