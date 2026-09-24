@@ -34,23 +34,27 @@
 using Printf
 
 const OUT_DIR = joinpath(@__DIR__, "out")
-const YEARS   = [2026, 2030, 2035, 2040, 2045]
+
+# Reporting years. Deliberately sparse: the point of this file is the shape of
+# the trajectory and how the spread behaves along it, which three points carry
+# as well as five. Every year is in the per-figure dumps.
+const YEARS = [2026, 2035, 2045]
 
 """
-    parse_dump(file, is_header, med_col, pct_col) -> Vector{Pair}
+    parse_dump(file, is_header, cols) -> Vector{Pair}
 
-Pull (scenario => year => (median, iqr_pct)) out of one spread dump. Column
-positions are passed in because the three dumps do not share a layout; they are
-1-based indices into the whitespace-split data row with bare "%" tokens dropped.
-Order of appearance is preserved so the summary reads in the same order as the
-figures. Throws if the file is missing or yields nothing, rather than quietly
-emitting an empty table.
+Pull (scenario => year => (p25, median, p75, iqr_pct)) out of one spread dump.
+`cols` is a NamedTuple of 1-based indices into the whitespace-split data row
+with bare "%" tokens dropped; the three dumps do not share a layout, so the
+positions are passed in rather than guessed. Order of appearance is preserved
+so the summary reads in the same order as the figures. Throws if the file is
+missing or yields nothing, rather than quietly emitting an empty table.
 """
-function parse_dump(file, is_header, med_col, pct_col)
+function parse_dump(file, is_header, cols)
     path = joinpath(OUT_DIR, file)
     isfile(path) || error("missing $path — run the figure script that writes it first " *
                           "(see the header of this file)")
-    rows = Pair{String,Dict{Int,Tuple{Float64,Float64}}}[]
+    rows = Pair{String,Dict{Int,NTuple{4,Float64}}}[]
     idx  = Dict{String,Int}()
     cur  = ""
     for line in eachline(path)
@@ -61,8 +65,10 @@ function parse_dump(file, is_header, med_col, pct_col)
             f = filter(!=("%"), split(line))
             y = parse(Int, f[1])
             y in YEARS || continue
-            haskey(idx, cur) || (push!(rows, cur => Dict{Int,Tuple{Float64,Float64}}()); idx[cur] = length(rows))
-            rows[idx[cur]].second[y] = (parse(Float64, f[med_col]), parse(Float64, f[pct_col]))
+            haskey(idx, cur) ||
+                (push!(rows, cur => Dict{Int,NTuple{4,Float64}}()); idx[cur] = length(rows))
+            rows[idx[cur]].second[y] = (parse(Float64, f[cols.p25]), parse(Float64, f[cols.med]),
+                                        parse(Float64, f[cols.p75]), parse(Float64, f[cols.pct]))
         elseif is_header(s)
             cur = s
         end
@@ -72,18 +78,21 @@ function parse_dump(file, is_header, med_col, pct_col)
     return rows
 end
 
-# Column indices below track the @printf formats in the three writing scripts.
+# Column indices track the @printf formats in the three writing scripts.
 f7  = parse_dump("fig_scenario_matrix_overlay_spread.txt",
-                 s -> occursin('|', s) && occursin("LCFS", s), 4, 8)
+                 s -> occursin('|', s) && occursin("LCFS", s),
+                 (p25 = 3, med = 4, p75 = 5, pct = 8))
 f8  = parse_dump("fig_tco_comparison_spread.txt",
-                 s -> occursin('|', s) && occursin("DEPLOYMENT", s), 3, 6)
+                 s -> occursin('|', s) && occursin("DEPLOYMENT", s),
+                 (p25 = 2, med = 3, p75 = 4, pct = 6))
 f13 = parse_dump("fig_abatement_cost_spread.txt",
-                 s -> occursin('—', s) && occursin("diesel", s), 3, 7)
+                 s -> occursin('—', s) && occursin("diesel", s),
+                 (p25 = 2, med = 3, p75 = 4, pct = 7))
 
-# The No/Low deployment scenario is excluded from this summary. Its fleet empties
-# inside the horizon: from 2033 the fixed station cost is spread over a collapsing
-# volume and the price runs off the figure's y-axis, and from 2037 the model has
-# no fleet to price at all and reports a $40/kg sentinel. Neither is a cost that
+# The No/Low deployment scenario is excluded. Its fleet empties inside the
+# horizon: from 2033 the fixed station cost is spread over a collapsing volume
+# and the price runs off the figure's y-axis, and from 2037 the model has no
+# fleet to price at all and reports a $40/kg sentinel. Neither is a cost that
 # belongs in a summary table. The full rows, with that explanation, stay in
 # fig_scenario_matrix_overlay_spread.txt.
 const SKIP_SCENARIO = "No/Low"
@@ -94,36 +103,9 @@ isempty(f7) && error("every LCOH scenario was filtered out — check SKIP_SCENAR
 short(s) = replace(s, "Electrolysis — grid" => "Grid elec.", "Electrolysis — solar" => "Solar elec.",
                       "SMR (2026 mix)" => "SMR", "SMR (current mix)" => "SMR",
                       " deployment" => "", " DEPLOYMENT" => "")
-function label7(k)
-    p = strip.(split(short(k), '|'));  "$(p[2]) · $(p[1])"
-end
-function label8(k)
-    p = strip.(split(short(k), '|'));  "$(p[2]) · $(titlecase(lowercase(p[1])))"
-end
-function label13(k)
-    p = strip.(split(short(k), '—'))
-    "$(titlecase(lowercase(p[1]))) · $(p[2])"
-end
-
-function table(io, title, unit, rows, label, fmt)
-    println(io)
-    println(io, "$title  —  $unit")
-    println(io, "-"^96)
-    @printf(io, " %-28s %13s %13s %13s %13s %13s\n", "Scenario", YEARS...)
-    println(io, " " * "-"^94)
-    for (k, v) in rows
-        @printf(io, " %-28s", label(k))
-        for y in YEARS
-            if haskey(v, y)
-                m, p = v[y]
-                @printf(io, " %13s", string(fmt(m), " (", round(Int, p), "%)"))
-            else
-                @printf(io, " %13s", "—")
-            end
-        end
-        println(io)
-    end
-end
+label7(k)  = (p = strip.(split(short(k), '|')); "$(p[2]) · $(p[1])")
+label8(k)  = (p = strip.(split(short(k), '|')); "$(p[2]) · $(titlecase(lowercase(p[1])))")
+label13(k) = (p = strip.(split(short(k), '—')); "$(titlecase(lowercase(p[1]))) · $(p[2])")
 
 const TABLES = (
     (title = "LCOH — delivered hydrogen fuel cost    [fig 7]",  unit = "USD/kg",
@@ -134,57 +116,20 @@ const TABLES = (
      rows = f13, label = label13, fmt = m -> @sprintf("%.0f", m)),
 )
 
+const STATS  = ("P25", "median", "P75", "IQR %")
+const CAVEAT = "Spread is investment timing only (build trigger, p_invest, 2–4 yr lead time, " *
+               "probabilistic station openings). Economic inputs are point values and the truck " *
+               "fleet is scheduled, so this is not a confidence interval on cost."
 const EXCLUDED_NOTE = "No/Low deployment is omitted: its fleet empties during the horizon, " *
                       "so from 2033 its cost runs off the figure's y-axis and from 2037 it is the " *
                       "model's zero-fleet sentinel rather than a cost. See " *
                       "fig_scenario_matrix_overlay_spread.txt for those rows."
 
-const CAVEAT = "Spread is investment timing only (build trigger, p_invest, 2–4 yr lead time, " *
-               "probabilistic station openings). Economic inputs are point values and the truck " *
-               "fleet is scheduled, so this is not a confidence interval on cost."
-
-function report(io)
-    println(io, "="^96)
-    println(io, " MONTE CARLO SPREAD SUMMARY — median (IQR as % of median)")
-    println(io, "="^96)
-    println(io, " Condensed from the three per-figure spread dumps at the reporting years.")
-    println(io, " Spread source: investment timing only — build trigger, p_invest, 2-4 yr lead")
-    println(io, " time, probabilistic station openings. Economic inputs are point values and")
-    println(io, " the truck fleet is scheduled, so this is not a confidence interval on cost.")
-    println(io, "="^96)
-
-    for t in TABLES
-        table(io, t.title, t.unit, t.rows, t.label, t.fmt)
-    end
-
-    println(io)
-    println(io, "="^96)
-    for l in wrap(EXCLUDED_NOTE, 94); println(io, " ", l); end
-    println(io, "="^96)
-end
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Paste-ready variants
-# ─────────────────────────────────────────────────────────────────────────────
-# The fixed-width table above is for reading in a terminal; pasted into a word
-# processor it arrives as one monospace blob. These two are for getting the same
-# numbers into a document as an actual table:
-#
-#   .html  open in a browser, select the table, copy, paste into Word. Arrives
-#          as a native Word table, borders and all. One step, no dialog.
-#   .tsv   paste into Word, select it, then Insert ▸ Table ▸ Convert Text to
-#          Table with tabs as the separator. Also opens directly in Excel.
-#
-# Both carry median and IQR in separate columns rather than "12.68 (10%)" in
-# one, so the numbers stay sortable and formattable once they land.
-
-cell(v, fmt) = v === nothing ? ("—", "—") : (fmt(v[1]), string(round(Int, v[2])))
-
 """
     wrap(text, width) -> Vector{String}
 
 Greedy word wrap, so the shared note strings can be reused verbatim in the HTML
-and TSV (where the reader's window does the wrapping) while still respecting the
+and TSV (where the reader's window wraps them) while still respecting the
 fixed-width rules in the .txt.
 """
 function wrap(text, width)
@@ -202,17 +147,80 @@ function wrap(text, width)
     return lines
 end
 
+# Four statistics per year, so the fixed-width table is wider than the usual
+# 96-column dumps. Sized to the content rather than to a rule it cannot meet.
+const LW    = 24                            # scenario label field
+const CW    = 9                             # one statistic field
+const GW    = length(STATS) * (CW + 1)      # one year group, incl. its separators
+const TOTAL = 1 + LW + length(YEARS) * GW   # full row width
+
+"Centre `s` in a field of `w` characters, for the year headers that span a group."
+function centre(s, w)
+    t = string(s); pad = max(0, w - length(t))
+    return " "^(pad ÷ 2) * t * " "^(pad - pad ÷ 2)
+end
+
+cells(v, fmt) = v === nothing ? fill("—", 4) :
+                [fmt(v[1]), fmt(v[2]), fmt(v[3]), string(round(Int, v[4])) * "%"]
+
+function table(io, t)
+    println(io)
+    println(io, "$(t.title)  —  $(t.unit)")
+    println(io, "-"^TOTAL)
+    print(io, " ", " "^LW)
+    for y in YEARS; print(io, centre(y, GW)); end
+    println(io)
+    @printf(io, " %-*s", LW, "Scenario")
+    for _ in YEARS, s in STATS; @printf(io, " %*s", CW, s); end
+    println(io)
+    println(io, " ", "-"^(TOTAL - 1))
+    for (k, v) in t.rows
+        @printf(io, " %-*s", LW, t.label(k))
+        for y in YEARS, c in cells(get(v, y, nothing), t.fmt)
+            @printf(io, " %*s", CW, c)
+        end
+        println(io)
+    end
+end
+
+function report(io)
+    println(io, "="^TOTAL)
+    println(io, " MONTE CARLO SPREAD SUMMARY — P25, median, P75 and IQR as % of median")
+    println(io, "="^TOTAL)
+    for l in wrap("Condensed from the three per-figure spread dumps at the reporting years. " *
+                  CAVEAT, TOTAL - 2)
+        println(io, " ", l)
+    end
+    println(io, "="^TOTAL)
+    for t in TABLES; table(io, t); end
+    println(io)
+    println(io, "="^TOTAL)
+    for l in wrap(EXCLUDED_NOTE, TOTAL - 2); println(io, " ", l); end
+    println(io, "="^TOTAL)
+end
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Paste-ready variants
+# ─────────────────────────────────────────────────────────────────────────────
+# The fixed-width table above is for reading in a terminal; pasted into a word
+# processor it arrives as one monospace blob. These two are for getting the same
+# numbers into a document as an actual table:
+#
+#   .html  open in a browser, select the table, copy, paste into Word. Arrives
+#          as a native Word table, borders and all. One step, no dialog.
+#   .tsv   paste into Word, select it, then Insert ▸ Table ▸ Convert Text to
+#          Table with tabs as the separator. Also opens directly in Excel.
+
 function write_tsv(io)
     for t in TABLES
         println(io, t.title, "\t", t.unit)
         print(io, "Scenario")
-        for y in YEARS; print(io, "\t", y, " median\t", y, " IQR %"); end
+        for y in YEARS, s in STATS; print(io, "\t", y, " ", s); end
         println(io)
         for (k, v) in t.rows
             print(io, t.label(k))
-            for y in YEARS
-                m, p = cell(get(v, y, nothing), t.fmt)
-                print(io, "\t", m, "\t", p)
+            for c in Iterators.flatten(cells(get(v, y, nothing), t.fmt) for y in YEARS)
+                print(io, "\t", c)
             end
             println(io)
         end
@@ -232,24 +240,26 @@ function write_html(io)
  th, td { border: 1px solid #999; padding: 3px 8px; }
  th    { background: #eee; }
  td.n  { text-align: right; }
+ td.m  { text-align: right; font-weight: bold; }
  td.q  { text-align: right; color: #555; }
  p.note { font-size: 9pt; color: #555; max-width: 46em; }
 </style>
-<h2>Monte Carlo spread summary — median and interquartile range</h2>""")
+<h2>Monte Carlo spread summary — P25, median, P75</h2>""")
     for t in TABLES
         println(io, "<table>")
         println(io, "<caption>", t.title, " — ", t.unit, "</caption>")
         print(io, "<tr><th rowspan=\"2\">Scenario</th>")
-        for y in YEARS; print(io, "<th colspan=\"2\">", y, "</th>"); end
+        for y in YEARS; print(io, "<th colspan=\"", length(STATS), "\">", y, "</th>"); end
         println(io, "</tr>")
         print(io, "<tr>")
-        for _ in YEARS; print(io, "<th>median</th><th>IQR&#160;%</th>"); end
+        for _ in YEARS, s in STATS; print(io, "<th>", replace(s, " " => "&#160;"), "</th>"); end
         println(io, "</tr>")
         for (k, v) in t.rows
             print(io, "<tr><td>", t.label(k), "</td>")
             for y in YEARS
-                m, p = cell(get(v, y, nothing), t.fmt)
-                print(io, "<td class=\"n\">", m, "</td><td class=\"q\">", p, "</td>")
+                c = cells(get(v, y, nothing), t.fmt)
+                print(io, "<td class=\"n\">", c[1], "</td><td class=\"m\">", c[2],
+                          "</td><td class=\"n\">", c[3], "</td><td class=\"q\">", c[4], "</td>")
             end
             println(io, "</tr>")
         end
