@@ -112,6 +112,15 @@ Appendix figures and the policy table:
 | `fig_sensitivity_grid_high_dep` | `fig_sensitivity.jl high_dep` |
 | `tab_2030_policy_gap.txt` | `tab_2030_policy_gap.jl` |
 
+Monte Carlo spread. Figures 7, 8 and 13 each write a plain-text dump of their
+median and P25–P75 by year next to the figure. `spread_summary.jl` condenses
+those three into one table at the reporting years; it reads the dumps rather
+than re-running the model, so generate them first. The spread reflects
+investment timing only — build trigger, `p_invest`, the 2–4 year build lead
+time and probabilistic station openings. Economic inputs are point values and
+the truck fleet is scheduled, so it is not a confidence interval on cost;
+parameter uncertainty is `fig_sensitivity.jl`.
+
 Scripts in `figures/` that are not listed above produce exploratory or superseded
 views; they are kept because they share the same configuration path and are
 useful for probing the model, and their output is routed to `figures/out/old/`.
