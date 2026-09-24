@@ -211,6 +211,10 @@ end
 #   .tsv   paste into Word, select it, then Insert ▸ Table ▸ Convert Text to
 #          Table with tabs as the separator. Also opens directly in Excel.
 
+# Column widths for the pasted table, in points.
+const LABEL_PT = 96
+const NUM_PT   = 30
+
 function write_tsv(io)
     for t in TABLES
         println(io, t.title, "\t", t.unit)
@@ -231,23 +235,34 @@ function write_tsv(io)
 end
 
 function write_html(io)
+    # Widths are given in points, per column, and the layout is fixed. Word sizes
+    # a pasted table from the CSS it is given and otherwise falls back to
+    # stretching every column to the page width, which is what makes the cells
+    # look oversized. 13 columns at these widths come to roughly 460 pt, which
+    # fits A4 portrait with normal margins.
     println(io, """<!DOCTYPE html><meta charset="utf-8">
 <title>Monte Carlo spread summary</title>
 <style>
- body  { font: 11pt/1.4 "Calibri", sans-serif; margin: 2em; }
- table { border-collapse: collapse; margin-bottom: 2em; }
- caption { caption-side: top; text-align: left; font-weight: bold; padding-bottom: .4em; }
- th, td { border: 1px solid #999; padding: 3px 8px; }
- th    { background: #eee; }
+ body  { font: 10pt/1.3 "Calibri", sans-serif; margin: 2em; }
+ table { border-collapse: collapse; table-layout: fixed; width: auto;
+         margin-bottom: 1.6em; font-size: 8.5pt; }
+ caption { caption-side: top; text-align: left; font-weight: bold;
+           font-size: 9.5pt; padding-bottom: .3em; white-space: nowrap; }
+ th, td { border: 0.5pt solid #999; padding: 0 3pt; white-space: nowrap;
+          overflow: hidden; line-height: 1.25; }
+ th    { background: #eee; font-weight: normal; text-align: center; }
  td.n  { text-align: right; }
  td.m  { text-align: right; font-weight: bold; }
  td.q  { text-align: right; color: #555; }
- p.note { font-size: 9pt; color: #555; max-width: 46em; }
+ p.note { font-size: 8pt; color: #555; max-width: 40em; }
 </style>
-<h2>Monte Carlo spread summary — P25, median, P75</h2>""")
+<h2 style="font-size:12pt">Monte Carlo spread summary — P25, median, P75</h2>""")
     for t in TABLES
         println(io, "<table>")
         println(io, "<caption>", t.title, " — ", t.unit, "</caption>")
+        print(io, "<colgroup><col style=\"width:", LABEL_PT, "pt\">")
+        for _ in YEARS, _ in STATS; print(io, "<col style=\"width:", NUM_PT, "pt\">"); end
+        println(io, "</colgroup>")
         print(io, "<tr><th rowspan=\"2\">Scenario</th>")
         for y in YEARS; print(io, "<th colspan=\"", length(STATS), "\">", y, "</th>"); end
         println(io, "</tr>")
