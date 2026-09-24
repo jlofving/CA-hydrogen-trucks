@@ -115,6 +115,19 @@ function table(io, title, unit, rows, label, fmt)
     end
 end
 
+const TABLES = (
+    (title = "LCOH — delivered hydrogen fuel cost    [fig 7]",  unit = "USD/kg",
+     rows = f7,  label = label7,  fmt = m -> @sprintf("%.2f", m)),
+    (title = "TCO — hydrogen truck cost of ownership [fig 8]",  unit = "USD/mile",
+     rows = f8,  label = label8,  fmt = m -> @sprintf("%.3f", m)),
+    (title = "MAC — net CO2 abatement cost           [fig 13]", unit = "USD/tCO2e",
+     rows = f13, label = label13, fmt = m -> @sprintf("%.0f", m)),
+)
+
+const CAVEAT = "Spread is investment timing only (build trigger, p_invest, 2–4 yr lead time, " *
+               "probabilistic station openings). Economic inputs are point values and the truck " *
+               "fleet is scheduled, so this is not a confidence interval on cost."
+
 function report(io)
     println(io, "="^96)
     println(io, " MONTE CARLO SPREAD SUMMARY — median (IQR as % of median)")
@@ -125,9 +138,9 @@ function report(io)
     println(io, " the truck fleet is scheduled, so this is not a confidence interval on cost.")
     println(io, "="^96)
 
-    table(io, "LCOH — delivered hydrogen fuel cost    [fig 7]",  "USD/kg",    f7,  label7,  m -> @sprintf("%.2f", m))
-    table(io, "TCO — hydrogen truck cost of ownership [fig 8]",  "USD/mile",  f8,  label8,  m -> @sprintf("%.3f", m))
-    table(io, "MAC — net CO2 abatement cost           [fig 13]", "USD/tCO2e", f13, label13, m -> @sprintf("%.0f", m))
+    for t in TABLES
+        table(io, t.title, t.unit, t.rows, t.label, t.fmt)
+    end
 
     println(io)
     println(io, "="^96)
@@ -137,8 +150,83 @@ function report(io)
     println(io, "="^96)
 end
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Paste-ready variants
+# ─────────────────────────────────────────────────────────────────────────────
+# The fixed-width table above is for reading in a terminal; pasted into a word
+# processor it arrives as one monospace blob. These two are for getting the same
+# numbers into a document as an actual table:
+#
+#   .html  open in a browser, select the table, copy, paste into Word. Arrives
+#          as a native Word table, borders and all. One step, no dialog.
+#   .tsv   paste into Word, select it, then Insert ▸ Table ▸ Convert Text to
+#          Table with tabs as the separator. Also opens directly in Excel.
+#
+# Both carry median and IQR in separate columns rather than "12.68 (10%)" in
+# one, so the numbers stay sortable and formattable once they land.
+
+cell(v, fmt) = v === nothing ? ("—", "—") : (fmt(v[1]), string(round(Int, v[2])))
+
+function write_tsv(io)
+    for t in TABLES
+        println(io, t.title, "\t", t.unit)
+        print(io, "Scenario")
+        for y in YEARS; print(io, "\t", y, " median\t", y, " IQR %"); end
+        println(io)
+        for (k, v) in t.rows
+            print(io, t.label(k))
+            for y in YEARS
+                m, p = cell(get(v, y, nothing), t.fmt)
+                print(io, "\t", m, "\t", p)
+            end
+            println(io)
+        end
+        println(io)
+    end
+    println(io, CAVEAT)
+end
+
+function write_html(io)
+    println(io, """<!DOCTYPE html><meta charset="utf-8">
+<title>Monte Carlo spread summary</title>
+<style>
+ body  { font: 11pt/1.4 "Calibri", sans-serif; margin: 2em; }
+ table { border-collapse: collapse; margin-bottom: 2em; }
+ caption { caption-side: top; text-align: left; font-weight: bold; padding-bottom: .4em; }
+ th, td { border: 1px solid #999; padding: 3px 8px; }
+ th    { background: #eee; }
+ td.n  { text-align: right; }
+ td.q  { text-align: right; color: #555; }
+ p.note { font-size: 9pt; color: #555; max-width: 46em; }
+</style>
+<h2>Monte Carlo spread summary — median and interquartile range</h2>""")
+    for t in TABLES
+        println(io, "<table>")
+        println(io, "<caption>", t.title, " — ", t.unit, "</caption>")
+        print(io, "<tr><th rowspan=\"2\">Scenario</th>")
+        for y in YEARS; print(io, "<th colspan=\"2\">", y, "</th>"); end
+        println(io, "</tr>")
+        print(io, "<tr>")
+        for _ in YEARS; print(io, "<th>median</th><th>IQR&#160;%</th>"); end
+        println(io, "</tr>")
+        for (k, v) in t.rows
+            print(io, "<tr><td>", t.label(k), "</td>")
+            for y in YEARS
+                m, p = cell(get(v, y, nothing), t.fmt)
+                print(io, "<td class=\"n\">", m, "</td><td class=\"q\">", p, "</td>")
+            end
+            println(io, "</tr>")
+        end
+        println(io, "</table>")
+    end
+    println(io, "<p class=\"note\">", CAVEAT, "</p>")
+end
+
 report(stdout)
-let path = joinpath(OUT_DIR, "spread_summary.txt")
-    open(report, path, "w")
-    println("\nSaved → $path")
+for (name, writer) in (("spread_summary.txt",  report),
+                       ("spread_summary.tsv",  write_tsv),
+                       ("spread_summary.html", write_html))
+    path = joinpath(OUT_DIR, name)
+    open(writer, path, "w")
+    println("Saved → $path")
 end

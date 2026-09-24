@@ -115,7 +115,9 @@ Appendix figures and the policy table:
 Monte Carlo spread. Figures 7, 8 and 13 each write a plain-text dump of their
 median and P25–P75 by year next to the figure. `spread_summary.jl` condenses
 those three into one table at the reporting years; it reads the dumps rather
-than re-running the model, so generate them first. The spread reflects
+than re-running the model, so generate them first. It writes three forms of the
+same table: `.txt` to read in a terminal, `.html` to copy into a word processor
+as a native table, and `.tsv` for Excel or Word's Convert Text to Table. The spread reflects
 investment timing only — build trigger, `p_invest`, the 2–4 year build lead
 time and probabilistic station openings. Economic inputs are point values and
 the truck fleet is scheduled, so it is not a confidence interval on cost;
