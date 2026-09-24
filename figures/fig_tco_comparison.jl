@@ -611,3 +611,43 @@ open(out_txt, "w") do io
     println(io, "="^84)
 end
 println("Saved → $out_txt")
+
+# ── Monte Carlo spread (P25–P75) ──────────────────────────────────────────────
+# Panels (a)/(b) draw the median hydrogen TCO per pathway with a P25–P75 ribbon.
+# This dump puts the same quartiles in text, together with the median delivered
+# hydrogen cost they come from, so the spread can be quoted without measuring
+# the ribbon.
+let path = joinpath(OUT_DIR, "fig_tco_comparison_spread.txt")
+    open(path, "w") do io
+        println(io, "="^100)
+        println(io, " MONTE CARLO SPREAD — fig_tco_comparison (manuscript fig $(FIG_NUMBER["fig_tco_comparison"]))")
+        println(io, " Hydrogen truck total cost of ownership, USD/mile (policy-inclusive)")
+        println(io, "="^100)
+        @printf(io, " %d Monte Carlo runs per pathway, seed %d. LCFS = no_change.\n", N_RUNS, SEED)
+        println(io, " Plotted line = median TCO; plotted ribbon = P25–P75, tabulated below.")
+        println(io, " LCOH column is the median delivered hydrogen cost (USD/kg) driving each row.")
+        println(io, "="^100)
+
+        for (dep_label, res) in (("LIMITED DEPLOYMENT", results), ("HIGH DEPLOYMENT", results_high))
+            for (pw, r) in zip(pathways, res)
+                println(io)
+                println(io, "$dep_label | $(pw.label)")
+                println(io, "-"^100)
+                @printf(io, " %-6s %11s %11s %11s %11s %10s %12s\n",
+                        "Year", "P25", "median", "P75", "IQR", "IQR/med", "median LCOH")
+                println(io, " " * "-"^98)
+                for (k, y) in enumerate(r.years)
+                    (y < 2026 || y > END_YEAR) && continue
+                    iqr = r.p75[k] - r.p25[k]
+                    @printf(io, " %-6d %11.4f %11.4f %11.4f %11.4f %9.1f %% %12.3f\n",
+                            y, r.p25[k], r.median_t[k], r.p75[k], iqr,
+                            r.median_t[k] != 0 ? 100 * iqr / r.median_t[k] : NaN,
+                            r.median_lcoh[k])
+                end
+            end
+        end
+        println(io)
+        println(io, "="^100)
+    end
+    println("Monte Carlo spread → $path")
+end

@@ -48,7 +48,7 @@ include("../hydrogen truck deployment.jl")
 include("config_defaults.jl")
 include("pub_theme.jl")
 
-const N_RUNS  = 300   # MC runs per variant — increase for smoother results
+const N_RUNS  = 1000  # MC runs per variant — matches every other figure script
 const SEED    = 42
 const OUT_DIR = joinpath(@__DIR__, "out")
 mkpath(OUT_DIR)

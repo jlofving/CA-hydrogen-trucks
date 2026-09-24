@@ -297,3 +297,51 @@ Legend(
 
 # ── Save ──────────────────────────────────────────────────────────────────────
 save_pub("fig_scenario_matrix_overlay", fig)
+
+# ── Monte Carlo spread (P25–P75) ──────────────────────────────────────────────
+# The figure draws the median delivered hydrogen fuel cost per scenario; the
+# shaded bands are P10–P90. This dump reports the interquartile range for the
+# same runs, so the spread can be quoted in the text without re-reading it off
+# the bands.
+let path = joinpath(OUT_DIR, "fig_scenario_matrix_overlay_spread.txt")
+    open(path, "w") do io
+        println(io, "="^92)
+        println(io, " MONTE CARLO SPREAD — fig_scenario_matrix_overlay (manuscript fig $(FIG_NUMBER["fig_scenario_matrix_overlay"]))")
+        println(io, " Delivered hydrogen fuel cost, USD/kg, net of LCFS + HRI + 45V")
+        println(io, "="^92)
+        @printf(io, " %d Monte Carlo runs per scenario, seed %d.\n", N_RUNS, SEED)
+        println(io, " Plotted line = median; plotted band = P10–P90; IQR below = P25–P75.")
+        println(io)
+        println(io, " TWO THINGS THIS TABLE SHOWS THAT THE FIGURE DOES NOT. The panel's y-axis")
+        @printf(io, " stops at \$%.0f/kg, so any row above that is drawn off-scale and clipped;\n", y_hi)
+        println(io, " such rows are flagged with '>' in the last column. They occur only in the")
+        println(io, " No/Low deployment scenario, where the fleet shrinks faster than it is")
+        println(io, " replaced and the fixed station cost is spread over a collapsing volume.")
+        println(io, " Once that fleet reaches zero the model cannot form a price at all and")
+        println(io, " substitutes a \$40.00/kg sentinel to avoid dividing by zero — a placeholder,")
+        println(io, " not a modelled cost. Those rows are the ones with an IQR of exactly 0.")
+        println(io, "="^92)
+
+        for i in eachindex(lcfs_specs), j in eachindex(truck_specs)
+            for (pw, r) in zip(pathways, cell_results[i, j])
+                println(io)
+                println(io, "$(truck_specs[j].label) | $(pw.label) | $(lcfs_specs[i].label)")
+                println(io, "-"^92)
+                @printf(io, " %-6s %9s %9s %9s %9s %9s %9s %9s  %s\n",
+                        "Year", "P10", "P25", "median", "P75", "P90", "IQR", "IQR/med", "")
+                println(io, " " * "-"^92)
+                for (k, y) in enumerate(r.years)
+                    (y < 2026 || y > END_YEAR) && continue
+                    iqr  = r.p75[k] - r.p25[k]
+                    flag = r.median_p[k] > y_hi ? ">" : " "
+                    @printf(io, " %-6d %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f %8.1f %%  %s\n",
+                            y, r.p10[k], r.p25[k], r.median_p[k], r.p75[k], r.p90[k],
+                            iqr, r.median_p[k] != 0 ? 100 * iqr / r.median_p[k] : NaN, flag)
+                end
+            end
+        end
+        println(io)
+        println(io, "="^92)
+    end
+    println("Monte Carlo spread → $path")
+end

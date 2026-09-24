@@ -209,11 +209,27 @@ function solar_mac(scenario_key)
     tcp_med_hi = [median(tcp_hi[:, k]) for k in 1:n]
     co2_t      = med_miles .* (CO2_G_PER_MILE - SOLAR_H2_CI * MJ_H2_PER_KG / miles_per_kg_h2) ./ 1e6
     health     = [health_cost_per_mile(yr) * med_miles[k] / 1e6 for (k, yr) in enumerate(years)]
+
+    # Per-run net MAC, for the Monte Carlo spread reported next to the figure.
+    # The fleet cancels out of the ratio — cost premium and abated CO2e are both
+    # proportional to the same per-run mileage — and under the scheduled
+    # deployment used here the fleet is identical in every run anyway. So the
+    # quantiles below sit on the plotted median rather than near it; the text
+    # dump prints the per-run median against the plotted value so that stays
+    # checked rather than assumed.
+    co2_r    = mi_yr .* (CO2_G_PER_MILE - SOLAR_H2_CI * MJ_H2_PER_KG / miles_per_kg_h2) ./ 1e6
+    hlth_r   = [health_cost_per_mile(years[k]) * mi_yr[r, k] / 1e6 for r in 1:N_RUNS, k in 1:n]
+    net_r_lo = (tcp_lo .- hlth_r) .* 1e6 ./ co2_r
+    net_r_hi = (tcp_hi .- hlth_r) .* 1e6 ./ co2_r
+    qt(M, p) = [quantile(M[:, k], p) for k in 1:n]
+
     return (years = years,
             gross_lo = tcp_med_lo .* 1e6 ./ co2_t,
             gross_hi = tcp_med_hi .* 1e6 ./ co2_t,
             net_lo   = (tcp_med_lo .- health) .* 1e6 ./ co2_t,
-            net_hi   = (tcp_med_hi .- health) .* 1e6 ./ co2_t)
+            net_hi   = (tcp_med_hi .- health) .* 1e6 ./ co2_t,
+            lo_p25 = qt(net_r_lo, 0.25), lo_med = qt(net_r_lo, 0.50), lo_p75 = qt(net_r_lo, 0.75),
+            hi_p25 = qt(net_r_hi, 0.25), hi_med = qt(net_r_hi, 0.50), hi_p75 = qt(net_r_hi, 0.75))
 end
 
 # Drift check lives in fig_societal_cost_benefit.jl, which runs the same fleet.
@@ -245,6 +261,65 @@ println("-"^78)
         join([@sprintf("%d: %.0f", y, martin_mac(y)) for y in 2026:5:2045], "   "))
 @printf("  %-24s €→2024 USD × %.2f, log-linear between reported points\n", "", MARTIN_EUR_TO_USD24)
 println()
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Monte Carlo spread (P25–P75) — written next to the figure
+# ─────────────────────────────────────────────────────────────────────────────
+# The plotted curves are the net MAC at each year's median. The interquartile
+# range below comes from the per-run net MAC: the same calculation applied to
+# each Monte Carlo draw separately, then quantiled. Only the delivered hydrogen
+# price varies across runs — the truck fleet follows a fixed schedule, so the
+# abated tonnage is identical in every run and drops out of the ratio. That is
+# why the per-run median reproduces the plotted value exactly; the check column
+# would expose it if a future change made the fleet stochastic.
+let path = joinpath(OUT_DIR, "fig_abatement_cost_spread.txt")
+    open(path, "w") do io
+        println(io, "="^96)
+        println(io, " MONTE CARLO SPREAD — fig_abatement_cost (manuscript fig $(FIG_NUMBER["fig_abatement_cost"]))")
+        println(io, " Net CO2 abatement cost of solar-electrolysis hydrogen trucking, 2024 USD/tCO2e")
+        println(io, "="^96)
+        @printf(io, " %d Monte Carlo runs, seed %d. Net = unsubsidised resource-cost premium\n", N_RUNS, SEED)
+        println(io, " minus avoided air-quality damage, per tonne of CO2e abated.")
+        println(io, " Health basis: $HEALTH_BASIS.  Diesel bracket: \$$(DIESEL_P_LO) and \$$(DIESEL_P_HI)/gal.")
+        println(io)
+        println(io, " 'plotted' is the curve in the figure (net MAC evaluated at the median).")
+        println(io, " 'run-med' is the median of the per-run net MAC. The two agree to within")
+        println(io, " rounding because the truck schedule is deterministic, so the abated")
+        println(io, " tonnage cancels from the ratio; the column is kept as a standing check.")
+        println(io, "="^96)
+
+        for (title, F) in (("LIMITED DEPLOYMENT", F_demo), ("HIGH DEPLOYMENT", F_high))
+            for (dp, plotted, p25, rmed, p75) in
+                    ((DIESEL_P_LO, F.net_lo, F.lo_p25, F.lo_med, F.lo_p75),
+                     (DIESEL_P_HI, F.net_hi, F.hi_p25, F.hi_med, F.hi_p75))
+                println(io)
+                println(io, "$title — diesel \$$(dp)/gal")
+                println(io, "-"^96)
+                @printf(io, " %-6s %10s %10s %10s %10s %10s %9s\n",
+                        "Year", "P25", "plotted", "P75", "IQR", "run-med", "IQR/med")
+                println(io, " " * "-"^94)
+                for (k, y) in enumerate(F.years)
+                    (y < 2026 || y > END_YEAR) && continue
+                    iqr = p75[k] - p25[k]
+                    @printf(io, " %-6d %10.1f %10.1f %10.1f %10.1f %10.1f %8.1f %%\n",
+                            y, p25[k], plotted[k], p75[k], iqr, rmed[k],
+                            plotted[k] != 0 ? 100 * iqr / abs(plotted[k]) : NaN)
+                end
+            end
+        end
+        println(io)
+        println(io, "="^96)
+        maxdev = maximum(abs.(vcat(F_demo.lo_med .- F_demo.net_lo, F_demo.hi_med .- F_demo.net_hi,
+                                   F_high.lo_med .- F_high.net_lo, F_high.hi_med .- F_high.net_hi)))
+        @printf(io, " CHECK  max |run-med − plotted| over all years and both scenarios: %.4f USD/tCO2e\n", maxdev)
+        println(io, maxdev < 1e-6 ?
+            " Exact, as expected for a deterministic fleet." :
+            " *** NON-ZERO: the fleet has become stochastic and the plotted curve is now a" *
+            " ratio of medians rather than a median ratio. Revisit before citing the IQR. ***")
+        println(io, "="^96)
+    end
+    println("Monte Carlo spread → $path")
+end
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Figure — single panel, both deployments overlaid (net MAC), SCC band
