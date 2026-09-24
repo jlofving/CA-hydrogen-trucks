@@ -1,0 +1,146 @@
+{
+  "station_cost_reference_data": {
+    "gaseous": {
+      "description": "Gaseous hydrogen storage stations - costs by capacity",
+      "capacity_kg_per_day": [2000, 4000, 8000, 18000],
+      "capex_usd": [11000000, 20700000, 30300000, 45400000],
+      "om_cost_per_year_usd": [876000, 1680000, 2700000, 4650000],
+      "om_30pct_per_year_usd": [619000, 1170000, 1810000, 2960000],
+      "om_50pct_per_year_usd": [723000, 1380000, 2170000, 3640000]
+    },
+    "liquid": {
+      "description": "Liquid hydrogen storage stations - costs by capacity",
+      "capacity_kg_per_day": [2000, 4000, 8000, 18000],
+      "capex_usd": [5920000, 10900000, 14500000, 24000000],
+      "om_cost_per_year_usd": [602000, 1040000, 1500000, 2710000],
+      "om_30pct_per_year_usd": [501000, 850000, 1130000, 1880000],
+      "om_50pct_per_year_usd": [542000, 929000, 1280000, 2210000]
+    }
+  },
+  "stations": [
+    {
+      "id": "Station_1",
+      "name": "Existing Station A",
+      "planned_opening_year": 2026,
+      "capacity_kg_per_day": 1200,
+      "storage_type": "gaseous",
+      "status": "operational",
+      "public_funding_percentage": 0
+    },
+    {
+      "id": "Station_2",
+      "name": "Existing Station B",
+      "planned_opening_year": 2026,
+      "capacity_kg_per_day": 1200,
+      "storage_type": "gaseous",
+      "status": "operational",
+      "public_funding_percentage": 0
+    },
+    {
+      "id": "Station_3",
+      "name": "Existing Station C",
+      "planned_opening_year": 2026,
+      "capacity_kg_per_day": 1200,
+      "storage_type": "gaseous",
+      "status": "operational",
+      "public_funding_percentage": 0
+    },
+    {
+      "id": "Station_4",
+      "name": "Existing Station D",
+      "planned_opening_year": 2026,
+      "capacity_kg_per_day": 1200,
+      "storage_type": "gaseous",
+      "status": "operational",
+      "public_funding_percentage": 0
+    },
+    {
+      "id": "Station_5",
+      "name": "Under Construction Station 2026 B",
+      "planned_opening_year": 2026,
+      "capacity_kg_per_day": 1200,
+      "storage_type": "gaseous",
+      "status": "FID",
+      "public_funding_percentage": 0
+    },
+    {
+      "id": "Station_11",
+      "name": "Project Development 2026",
+      "planned_opening_year": 2026,
+      "capacity_kg_per_day": 600,
+      "storage_type": "gaseous",
+      "status": "project development",
+      "public_funding_percentage": 0
+    },
+    {
+      "id": "Station_6",
+      "name": "Project Development 2027",
+      "planned_opening_year": 2027,
+      "capacity_kg_per_day": 1000,
+      "storage_type": "gaseous",
+      "status": "project development",
+      "public_funding_percentage": 0
+    },
+    {
+      "id": "Station_7",
+      "name": "FID 2027 A",
+      "planned_opening_year": 2027,
+      "capacity_kg_per_day": 6000,
+      "storage_type": "liquid",
+      "status": "FID",
+      "public_funding_percentage": 0
+    },
+    {
+      "id": "Station_8",
+      "name": "FID Station 2027 B",
+      "planned_opening_year": 2027,
+      "capacity_kg_per_day": 6000,
+      "storage_type": "liquid",
+      "status": "FID",
+      "public_funding_percentage": 0
+    },
+    {
+      "id": "Station_9",
+      "name": "Project Development 2028 A",
+      "planned_opening_year": 2028,
+      "capacity_kg_per_day": 6000,
+      "storage_type": "liquid",
+      "status": "project development",
+      "public_funding_percentage": 0
+    },
+    {
+      "id": "Station_10",
+      "name": "Project Development 2028 B",
+      "planned_opening_year": 2028,
+      "capacity_kg_per_day": 4000,
+      "storage_type": "liquid",
+      "status": "project development",
+      "public_funding_percentage": 0
+    }
+  ],
+  "deployment_probability_config": {
+    "max_delay_years": 4,
+    "description": "Probability of deployment per year varies by project status, up to max_delay_years",
+    "probability_by_status": {
+      "operational": 1.0,
+      "under construction": 0.9,
+      "FID": 0.8,
+      "project development": 0.5,
+      "in planning": 0.3
+    }
+  },
+  "status_definitions": {
+    "operational": "Station is currently operational and dispensing hydrogen",
+    "under construction": "Station construction has started, expected to open in planned year",
+    "FID": "Final Investment Decision approved, financing secured, construction imminent",
+    "project development": "Project in development phase, permits and financing being arranged",
+    "in planning": "Early planning stage, feasibility studies and site selection ongoing"
+  },
+  "status_model_implications": {
+    "operational": "Already operational. This station is included in all simulations from the planned year onward with 100% certainty. It contributes immediately to hydrogen supply capacity.",
+    "under construction": "90% deployment probability per year. In each simulation year (up to 4 years after planned year), this station has a 90% chance to become operational. High likelihood of deployment contributes to more optimistic infrastructure scenarios.",
+    "FID": "80% deployment probability per year. With financing secured, this station has an 80% chance per year (up to 4 years after planned year) to become operational. Moderately high likelihood impacts both optimistic and realistic scenarios.",
+    "project development": "50% deployment probability per year. In the development phase, this station has a 50% chance per year (up to 4 years after planned year) to become operational. Creates significant variation across simulation runs.",
+    "in planning": "30% deployment probability per year. Early-stage planning means only a 30% chance per year (up to 4 years after planned year) to become operational. Contributes mainly to optimistic scenarios and increases uncertainty."
+  }
+}

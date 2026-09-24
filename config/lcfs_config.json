@@ -1,0 +1,216 @@
+{
+  "description": "Low Carbon Fuel Standard (LCFS) configuration for hydrogen pathways",
+  "electrolysis_grid_ci": {
+    "ci": 133.6,
+    "description": "Carbon intensity (gCO2e/MJ) of electrolytic H2 produced from California grid electricity. Applied whenever electrolysis_electricity_source = grid; reflects the high emissions of CA grid power. Solar electrolysis keeps the renewable electrolysis pathway CI (0)."
+  },
+  "lcfs_parameters": {
+    "eei": 1.9,
+    "mj_per_kg_h2": 120,
+    "default_credit_price_usd": 60,
+    "description": "EEI (Energy Economy Improvement) accounts for better fuel economy in hydrogen trucks. MJ per kg H2 is the energy content of hydrogen. Credit price in USD per credit."
+  },
+  "diesel_ci_schedule": {
+    "description": "Diesel carbon intensity (gCO2e/MJ) by year",
+    "schedule": [
+      {"year": 2024, "ci": 87.89},
+      {"year": 2025, "ci": 81.70},
+      {"year": 2026, "ci": 80.17},
+      {"year": 2027, "ci": 78.63},
+      {"year": 2028, "ci": 77.10},
+      {"year": 2029, "ci": 75.57},
+      {"year": 2030, "ci": 74.03},
+      {"year": 2031, "ci": 69.27},
+      {"year": 2032, "ci": 64.51},
+      {"year": 2033, "ci": 59.75},
+      {"year": 2034, "ci": 54.99},
+      {"year": 2035, "ci": 50.23},
+      {"year": 2036, "ci": 45.47},
+      {"year": 2037, "ci": 40.71},
+      {"year": 2038, "ci": 35.95},
+      {"year": 2039, "ci": 31.19},
+      {"year": 2040, "ci": 26.44},
+      {"year": 2041, "ci": 23.26},
+      {"year": 2042, "ci": 20.09},
+      {"year": 2043, "ci": 16.92},
+      {"year": 2044, "ci": 13.74},
+      {"year": 2045, "ci": 10.57}
+    ]
+  },
+  "hydrogen_pathways": {
+    "description": "Hydrogen production pathways with their carbon intensities (gCO2e/MJ)",
+    "pathways": [
+      {
+        "id": "current_mix",
+        "name": "Latest California Hydrogen Mix",
+        "ci": 21.23,
+        "technology_type": "smr",
+        "description": "The current weighted carbon intensity mix of all hydrogen available on the California market. 2025 average of quarterly LCFS values (Q1 47.89, Q2 49.88, Q3 -5.40, Q4 -7.45)"
+      },
+      {
+        "id": "electrolysis",
+        "name": "Electrolysis from 100% Renewable Electricity",
+        "ci": 0,
+        "technology_type": "electrolysis",
+        "description": ""
+      },
+      {
+        "id": "dairy_biomethane_smr",
+        "name": "100% Dairy Biomethane-SMR",
+        "ci": -300,
+        "technology_type": "smr",
+        "description": "Steam methane reforming using dairy biomethane"
+      },
+      {
+        "id": "biomethane_smr",
+        "name": "Biomethane-SMR",
+        "ci": 54,
+        "technology_type": "smr",
+        "description": "Steam methane reforming using biomethane"
+      },
+      {
+        "id": "biomethane_35_smr",
+        "name": "33% Biomethane SMR",
+        "ci": 88,
+        "technology_type": "smr",
+        "description": "33% biomethane blended with natural gas SMR"
+      },
+      {
+        "id": "natural_gas_smr_gaseous",
+        "name": "Natural Gas-SMR (Gaseous H2)",
+        "ci": 106,
+        "technology_type": "smr",
+        "description": "Natural gas steam methane reforming - gaseous storage"
+      },
+      {
+        "id": "natural_gas_smr_liquid",
+        "name": "Natural Gas-SMR (Liquefied H2)",
+        "ci": 144,
+        "technology_type": "smr",
+        "description": "Natural gas steam methane reforming - liquefied storage"
+      }
+    ]
+  },
+  "lcfs_price_schedule": {
+    "description": "LCFS credit price schedule. Can be used for predetermined prices per year.",
+    "schedule": [
+      {"year": 2026, "price_usd": 60},
+      {"year": 2027, "price_usd": 65},
+      {"year": 2028, "price_usd": 70},
+      {"year": 2029, "price_usd": 75},
+      {"year": 2030, "price_usd": 80},
+      {"year": 2031, "price_usd": 85},
+      {"year": 2032, "price_usd": 90},
+      {"year": 2033, "price_usd": 95}
+    ]
+  },
+  "lcfs_price_scenarios": {
+    "description": "Named LCFS credit price scenarios for figure scripts. Use load_lcfs_price_scenario(name) in config_defaults.jl.",
+    "no_change": {
+      "description": "Stays at 65 USD",
+      "schedule": [
+        {"year": 2026, "price_usd": 65},
+        {"year": 2027, "price_usd": 65},
+        {"year": 2028, "price_usd": 65},
+        {"year": 2029, "price_usd": 65},
+        {"year": 2030, "price_usd": 65},
+        {"year": 2031, "price_usd": 65},
+        {"year": 2032, "price_usd": 65},
+        {"year": 2033, "price_usd": 65},
+        {"year": 2034, "price_usd": 65},
+        {"year": 2035, "price_usd": 65},
+        {"year": 2036, "price_usd": 65},
+        {"year": 2037, "price_usd": 65},
+        {"year": 2038, "price_usd": 65},
+        {"year": 2039, "price_usd": 65},
+        {"year": 2040, "price_usd": 65}
+      ]
+    },
+    "Small increase": {
+      "description": "Reference: gradual rise.",
+      "schedule": [
+        {"year": 2026, "price_usd": 60},
+        {"year": 2027, "price_usd": 65},
+        {"year": 2028, "price_usd": 70},
+        {"year": 2029, "price_usd": 75},
+        {"year": 2030, "price_usd": 80},
+        {"year": 2031, "price_usd": 85},
+        {"year": 2032, "price_usd": 90},
+        {"year": 2033, "price_usd": 95},
+        {"year": 2034, "price_usd": 100},
+        {"year": 2035, "price_usd": 105},
+        {"year": 2036, "price_usd": 110},
+        {"year": 2037, "price_usd": 115},
+        {"year": 2038, "price_usd": 120},
+        {"year": 2039, "price_usd": 125},
+        {"year": 2040, "price_usd": 130}
+      ]
+    },
+    "high_inc": {
+      "description": "Price reaches ceiling in 2030",
+      "schedule": [
+        {"year": 2026, "price_usd": 75},
+        {"year": 2027, "price_usd": 100},
+        {"year": 2028, "price_usd": 140},
+        {"year": 2029, "price_usd": 190},
+        {"year": 2030, "price_usd": 250},
+        {"year": 2031, "price_usd": 250},
+        {"year": 2032, "price_usd": 250},
+        {"year": 2033, "price_usd": 250},
+        {"year": 2034, "price_usd": 250},
+        {"year": 2035, "price_usd": 250},
+        {"year": 2036, "price_usd": 250},
+        {"year": 2037, "price_usd": 250},
+        {"year": 2038, "price_usd": 250},
+        {"year": 2039, "price_usd": 250},
+        {"year": 2040, "price_usd": 250}
+      ]
+    }
+  },
+  "lcfs_price_curve": {
+    "description": "Dynamic LCFS credit price calculation using start/end prices and curve type",
+    "start_price_usd": 60,
+    "end_price_usd": 100,
+    "curve_type": "linear",
+    "curve_types_available": ["linear", "exponential", "logarithmic"]
+  },
+  "production_facilities": {
+    "description": "Production facility costs and parameters by technology type",
+    "smr": {
+      "capacity_kg_day": 30000,
+      "capex_usd": 120000000,
+      "annual_om_fraction": 0.03,
+      "lifetime_years": 25
+    },
+    "electrolysis": {
+      "capacity_kg_day": 10000,
+      "capex_usd": 65000000,
+      "annual_om_fraction": 0.04,
+      "lifetime_years": 20
+    }
+  },
+  "initial_production": {
+    "description": "Initial production facility parameters",
+    "capacity_tpd": 60,
+    "capex_usd": 0,
+    "note": "Set CAPEX to 0 to treat as sunk cost, or specify value to include in production cost calculation"
+  },
+  "electrolysis_pricing": {
+    "description": "Parameters for electrolysis CAPEX-based production cost calculation",
+    "electrolyzer_capex_per_kw": 1000,
+    "electricity_source": "grid",
+    "grid_electricity": {
+      "electricity_cost_per_kwh": 0.05,
+      "grid_connection_cost_per_kw": 75,
+      "description": "Industrial grid electricity cost in USD per kWh. Grid connection cost is the one-time capital cost for grid connection infrastructure per kW of electrolyzer capacity."
+    },
+    "solar_powered": {
+      "solar_operating_hours": 10,
+      "solar_capex_per_kw": 800,
+      "solar_capacity_factor": 0.25,
+      "solar_lifetime_years": 25,
+      "description": "Solar operating hours is the number of daylight hours per day the electrolyzer can operate (typical: 8-12). Solar capacity factor accounts for weather and panel efficiency. Typical range: 0.20-0.30"
+    },
+    "note": "Electrolyzer capacity: (kg_day × 55 kWh/kg) / 24 hours. Each kg H2 requires 55 kWh."
+  }
+}

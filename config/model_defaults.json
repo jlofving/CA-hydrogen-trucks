@@ -1,0 +1,92 @@
+{
+  "simulation": {
+    "n_monte_carlo_runs": 1000,
+    "start_year": 2026,
+    "end_year": 2045,
+    "random_seed": 42
+  },
+  "economics": {
+    "discount_rate": 0.07,
+    "h2_production_transport_cost": 9.0
+  },
+  "h2_pathways": {
+    "description": "Default H2 production pathway for standalone execution. Set in the UI at runtime.",
+    "initial_pathway_id": "electrolysis",
+    "expansion_pathway_id": "electrolysis"
+  },
+  "h2_pricing": {
+    "description": "H2 pricing mode for standalone model execution. Set use_schedule or use_curve to true to enable that mode.",
+    "use_schedule": false,
+    "use_curve": false,
+    "start_price": 9.0,
+    "end_price": 7.0,
+    "curve_type": "linear"
+  },
+  "lcfs": {
+    "enabled": true,
+    "use_price_schedule": false,
+    "use_price_curve": false,
+    "start_price": 60.0,
+    "end_price": 100.0,
+    "curve_type": "linear"
+  },
+  "truck_defaults": {
+    "description": "Default truck fleet parameters. Actual values are sent by the UI at runtime; these serve as fallbacks for standalone execution.",
+    "max_trucks": 350,
+    "initial_trucks": 200,
+    "h2_per_truck_per_day": 38.0,
+    "operating_days_per_year": 250,
+    "transportation_cost_per_kg": 1.0,
+    "uptime": {
+      "description": "Fleet utilization by SIMULATION year, not truck age: year_1 = the first simulation year (2026), year_2 = the second (2027), default = every year from the third (2028) onward. Ramps 30% -> 60% -> 100% as the fleet and refuelling network mature.",
+      "year_1": 0.30,
+      "year_2": 0.60,
+      "default": 1.00
+    },
+    "comment_annual_basis": "38 kg/day x 250 operating days = 9,500 kg/truck/year at full utilization; at miles_per_kg_h2 = 9 (tco_config.json) that is 85,500 miles/truck/year."
+  },
+  "hri": {
+    "description": "HRI (Hydrogen Refueling Infrastructure) LCFS credit parameters. Stations below the utilization threshold receive credits for unused capacity.",
+    "utilization_threshold": 0.625,
+    "station_uptime": 0.92
+  },
+  "station_projection": {
+    "description": "Automatic station projection after the user-defined pipeline ends.",
+    "auto_project": true,
+    "capacity_buffer": 1.25
+  },
+  "station_config": {
+    "description": "Station and truck deployment mode. Set to false to use probabilistic (stochastic) deployment instead of config files.",
+    "use_station_config_file": true,
+    "use_truck_deployment_schedule": true
+  },
+  "stochastic_fallback": {
+    "description": "Parameters for probabilistic station/truck deployment. Only active when use_station_config_file or use_truck_deployment_schedule is false. Currently not in use — the model always reads from config files.",
+    "max_stations": 10,
+    "initial_stations": 3,
+    "station_capex": 10900000,
+    "station_lifetime": 10,
+    "om_cost_per_station": 1000000,
+    "station_prob": {
+      "type": "exponential",
+      "base": 0.05,
+      "slope": 0.15,
+      "steepness": 8.0,
+      "midpoint": 0.5,
+      "log_scale": 0.25,
+      "log_factor": 5.0,
+      "exp_rate": 2.0
+    },
+    "truck_prob": {
+      "type": "exponential",
+      "base": 0.01,
+      "slope": 0.12,
+      "steepness": 8.0,
+      "midpoint": 0.9,
+      "midpoint_std": 0.25,
+      "log_scale": 0.30,
+      "log_factor": 10.0,
+      "exp_rate": 4.5
+    }
+  }
+}

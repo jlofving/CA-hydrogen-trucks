@@ -1,0 +1,23 @@
+# Generated figures, tables and value dumps. Everything under figures/out/ is
+# produced by the scripts in figures/ and is deliberately not version-controlled
+# — the one exception is cobra_input.csv, which is the hand-off file to the EPA
+# COBRA model and cannot be regenerated without it.
+figures/out/*
+!figures/out/cobra_input.csv
+
+# Julia
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+
+# macOS
+.DS_Store
+._*
+
+# Editors / temporary files
+.vscode/
+*.tmp
+*.bak
+*.swp
+*~
+*.log

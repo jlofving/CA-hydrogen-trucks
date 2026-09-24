@@ -1,0 +1,112 @@
+{
+  "truck_deployment_schedule": {
+    "description": "Predetermined truck deployment schedule. Specifies number of NEW trucks added each year.",
+    "initial_trucks": 200,
+    "schedule": [
+      {"year": 2026, "trucks_added": 0},
+      {"year": 2027, "trucks_added": 10},
+      {"year": 2028, "trucks_added": 50},
+      {"year": 2029, "trucks_added": 150},
+      {"year": 2030, "trucks_added": 0},
+      {"year": 2031, "trucks_added": 300},
+      {"year": 2032, "trucks_added": 700},
+      {"year": 2033, "trucks_added": 0},
+      {"year": 2034, "trucks_added": 0},
+      {"year": 2035, "trucks_added": 0},
+      {"year": 2036, "trucks_added": 0},
+      {"year": 2037, "trucks_added": 0},
+      {"year": 2038, "trucks_added": 0},
+      {"year": 2039, "trucks_added": 0},
+      {"year": 2040, "trucks_added": 0}
+    ]
+  },
+  "truck_deployment_scenarios": {
+    "limited_dep": {
+      "description": "Base scenario matching the current truck_deployment_schedule above.",
+      "initial_trucks": 200,
+      "schedule": [
+        {"year": 2026, "trucks_added": 0},
+        {"year": 2027, "trucks_added": 10},
+        {"year": 2028, "trucks_added": 50},
+        {"year": 2029, "trucks_added": 150},
+        {"year": 2030, "trucks_added": 100},
+        {"year": 2031, "trucks_added": 200},
+        {"year": 2032, "trucks_added": 300},
+        {"year": 2033, "trucks_added": 500},
+        {"year": 2034, "trucks_added": 700},
+        {"year": 2035, "trucks_added": 1000},
+        {"year": 2036, "trucks_added": 1500},
+        {"year": 2037, "trucks_added": 1500},
+        {"year": 2038, "trucks_added": 2000},
+        {"year": 2039, "trucks_added": 2500},
+        {"year": 2040, "trucks_added": 3000}
+      ]
+    },
+    "high_dep": {
+      "description": "Optimistic rollout: faster early deployment.",
+      "initial_trucks": 200,
+      "schedule": [
+        {"year": 2026, "trucks_added": 50},
+        {"year": 2027, "trucks_added": 100},
+        {"year": 2028, "trucks_added": 100},
+        {"year": 2029, "trucks_added": 200},
+        {"year": 2030, "trucks_added": 600},
+        {"year": 2031, "trucks_added": 1000},
+        {"year": 2032, "trucks_added": 1000},
+        {"year": 2033, "trucks_added": 2000},
+        {"year": 2034, "trucks_added": 3000},
+        {"year": 2035, "trucks_added": 3000},
+        {"year": 2036, "trucks_added": 3500},
+        {"year": 2037, "trucks_added": 4000},
+        {"year": 2038, "trucks_added": 4000},
+        {"year": 2039, "trucks_added": 4500},
+        {"year": 2040, "trucks_added": 5000}
+      ]
+    },
+    "nolow_dep": {
+      "description": "Pessimistic rollout: delayed and slower deployment.",
+      "initial_trucks": 200,
+      "schedule": [
+        {"year": 2026, "trucks_added": 0},
+        {"year": 2027, "trucks_added": 10},
+        {"year": 2028, "trucks_added": 0},
+        {"year": 2029, "trucks_added": 10},
+        {"year": 2030, "trucks_added": 20},
+        {"year": 2031, "trucks_added": 0},
+        {"year": 2032, "trucks_added": 0},
+        {"year": 2033, "trucks_added": 0},
+        {"year": 2034, "trucks_added": 0},
+        {"year": 2035, "trucks_added": 0},
+        {"year": 2036, "trucks_added": 0},
+        {"year": 2037, "trucks_added": 0},
+        {"year": 2038, "trucks_added": 0},
+        {"year": 2039, "trucks_added": 0},
+        {"year": 2040, "trucks_added": 0}
+      ]
+    }
+  },
+  "h2_price_schedule": {
+    "description": "Hydrogen production/transport cost schedule. Can be used for predetermined prices per year.",
+    "schedule": [
+      {"year": 2026, "price_usd_per_kg": 9.0},
+      {"year": 2027, "price_usd_per_kg": 8.80},
+      {"year": 2028, "price_usd_per_kg": 8.70},
+      {"year": 2029, "price_usd_per_kg": 8.5},
+      {"year": 2030, "price_usd_per_kg": 8.0},
+      {"year": 2031, "price_usd_per_kg": 7.5},
+      {"year": 2032, "price_usd_per_kg": 7.3},
+      {"year": 2033, "price_usd_per_kg": 7.0}
+    ]
+  },
+  "h2_price_curve": {
+    "description": "Dynamic H2 price calculation using start/end prices and curve type",
+    "start_price_usd_per_kg": 9.0,
+    "end_price_usd_per_kg": 7.0,
+    "curve_type": "linear",
+    "curve_types_available": ["linear", "exponential", "logarithmic"]
+  },
+  "transportation_cost": {
+    "description": "Hydrogen transportation cost (separate from production cost). This is a reference value; the actual value is configured in model_defaults.json and can be overridden at runtime via the UI.",
+    "cost_per_kg": 1.0
+  }
+}

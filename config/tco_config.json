@@ -1,0 +1,76 @@
+{
+  "description": "Total Cost of Ownership (TCO) parameters for hydrogen vs. diesel Class 8 trucks in California",
+
+  "diesel_tco_usd_per_mile": {
+    "description": "ATRI motor carrier cost data (USD/mile), held constant across all years",
+    "source": "American Transportation Research Institute, An Analysis of the Operational Costs of Trucking: 2026 Update",
+    "fuel":                    0.482,
+    "truck_lease_or_purchase": 0.404,
+    "repair_and_maintenance":  0.215,
+    "tires":                   0.050,
+    "driver_and_other":        1.185,
+    "comment_driver_and_other": "Driver wages, benefits, tolls, permits & licenses and insurance, reported as a single line in the source table. Assumed identical for hydrogen trucks — see identical_cost_categories.",
+    "total":                   2.336,
+    "comment_total":           "Reference value from the source table; the model sums the components rather than reading this field.",
+    "miles_per_gallon":        7.43,
+    "comment_miles_per_gallon": "Class 8 fleet-average diesel fuel economy. Single source of truth: the figures read it via TCO_DIESEL_MPG in figures/config_defaults.jl. Used to convert a pump price ($/gal) into a fuel cost ($/mile) and to express the LCFS credit/deficit per mile.",
+    "comment_fuel_line_item": "The 'fuel' figure above is ATRI's reported national-average fuel cost ($0.482/mile, i.e. $3.58/gal at 7.43 mpg). The figures do NOT use it as the diesel reference — they use the California pump-price scenarios below. It is retained because it belongs to the ATRI cost table."
+  },
+
+  "diesel_price_usd_per_gallon": {
+    "description": "California retail diesel pump-price scenarios used as the fuel reference in every figure. Single source of truth: read via TCO_DIESEL_P_LO / TCO_DIESEL_P_HI in figures/config_defaults.jl — never hard-code these.",
+    "low":  4.80,
+    "high": 5.80,
+    "comment_basis": "Both are 2026 prices. Figures hold them flat in real terms and apply only the LCFS credit/deficit change over time; they are deliberately above ATRI's national-average fuel line item, which is not a California pump price."
+  },
+
+  "hydrogen_truck": {
+    "description": "Capital cost and drivetrain assumptions for Class 8 hydrogen fuel cell trucks",
+    "purchase_cost_usd":     600000,
+    "subsidy_usd":           240000,
+    "comment_subsidy":       "California HVIP subsidy — initial value (2026). See subsidy_schedule for phase-out.",
+    "net_cost_usd":          410000,
+    "comment_net_cost":      "Net cost at 2026 (purchase - subsidy). Decreases as subsidy phases out.",
+    "subsidy_schedule": [
+      {"year": 2026, "subsidy_usd": 240000},
+      {"year": 2030, "subsidy_usd": 120000},
+      {"year": 2035, "subsidy_usd": 0}
+    ],
+    "comment_subsidy_schedule": "HVIP subsidy phase-out. Value steps down at each listed year. Edit years/amounts here to change the phase-out trajectory.",
+    "comment_lifetime":      "Truck lifetime for annualization matches the operational lifetime used in the model (7 years)",
+    "miles_per_kg_h2":       9,
+    "comment_mileage":       "Fuel economy in miles per kg H2. Derives annual mileage via h2_per_truck_per_day × operating_days_per_year from model_defaults.json: 38 × 250 × 9 = 85,500 miles/truck/year. Note the annual mileage used for per-mile TCO does NOT apply the fleet utilization ramp — it is the full-utilization figure, consistent with the model's demand basis from 2028 onward (utilization = 1.00).",
+
+    "repair_and_maintenance_multiplier": 2.0,
+    "comment_rm":            "2× diesel R&M reflecting higher service costs during early commercialization",
+    "tires_multiplier":      1.5,
+    "comment_tires":         "1.5× diesel tires reflecting heavier fuel cell system / hydrogen storage weight",
+
+    "platform_cost_usd":     100000,
+    "comment_platform":      "Mature truck platform (chassis, cab, axles) — not subject to learning rate reductions",
+    
+    "learning": {
+      "description": "Wright's Law cost reduction applied to fuel cell system cost only (not platform). Driven by global cumulative H2 truck fleet stock. Same functional form as electrolyzer/solar CAPEX learning in the main model.",
+      "learning_rate":       0.2,
+      "comment_lr":          "15% cost reduction per doubling of cumulative global H2 truck fleet stock",
+      "reference_year":      2026,
+      "comment_reference":   "Fuel cell system cost of 260,000 USD applies at this reference year",
+      "observed_fleet_stock": [
+        {"year": 2019, "trucks": 1000},
+        {"year": 2020, "trucks": 3000},
+        {"year": 2021, "trucks": 4000},
+        {"year": 2022, "trucks": 5000},
+        {"year": 2023, "trucks": 8000},
+        {"year": 2024, "trucks": 12000},
+        {"year": 2025, "trucks": 17000}
+      ],
+      "comment_observed":  "Global cumulative H2 truck fleet stock (vehicles). 2025 is full-year estimate. Source: IEA Global Hydrogen Review 2025.",
+      "projection_method": "Cubic OLS fit (Vandermonde matrix) to observed fleet stock data, extended through 2040. Implemented in fig_tco_comparison.jl. Fleet stock used directly as the Wright's Law cumulative production driver."
+    }
+  },
+
+  "identical_cost_categories": {
+    "description": "Cost categories assumed identical between diesel and hydrogen trucks (USD/mile, from ATRI 2026 Update). Driver wages, benefits, tolls, permits & licenses and insurance are reported as one line in the source table and are carried as a single aggregate.",
+    "driver_and_other":   1.185
+  }
+}
