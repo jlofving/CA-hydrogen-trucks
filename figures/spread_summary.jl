@@ -80,6 +80,16 @@ f8  = parse_dump("fig_tco_comparison_spread.txt",
 f13 = parse_dump("fig_abatement_cost_spread.txt",
                  s -> occursin('—', s) && occursin("diesel", s), 3, 7)
 
+# The No/Low deployment scenario is excluded from this summary. Its fleet empties
+# inside the horizon: from 2033 the fixed station cost is spread over a collapsing
+# volume and the price runs off the figure's y-axis, and from 2037 the model has
+# no fleet to price at all and reports a $40/kg sentinel. Neither is a cost that
+# belongs in a summary table. The full rows, with that explanation, stay in
+# fig_scenario_matrix_overlay_spread.txt.
+const SKIP_SCENARIO = "No/Low"
+filter!(kv -> !occursin(SKIP_SCENARIO, kv.first), f7)
+isempty(f7) && error("every LCOH scenario was filtered out — check SKIP_SCENARIO")
+
 # ── Scenario labels, shortened to fit one line ────────────────────────────────
 short(s) = replace(s, "Electrolysis — grid" => "Grid elec.", "Electrolysis — solar" => "Solar elec.",
                       "SMR (2026 mix)" => "SMR", "SMR (current mix)" => "SMR",
@@ -124,6 +134,11 @@ const TABLES = (
      rows = f13, label = label13, fmt = m -> @sprintf("%.0f", m)),
 )
 
+const EXCLUDED_NOTE = "No/Low deployment is omitted: its fleet empties during the horizon, " *
+                      "so from 2033 its cost runs off the figure's y-axis and from 2037 it is the " *
+                      "model's zero-fleet sentinel rather than a cost. See " *
+                      "fig_scenario_matrix_overlay_spread.txt for those rows."
+
 const CAVEAT = "Spread is investment timing only (build trigger, p_invest, 2–4 yr lead time, " *
                "probabilistic station openings). Economic inputs are point values and the truck " *
                "fleet is scheduled, so this is not a confidence interval on cost."
@@ -144,9 +159,7 @@ function report(io)
 
     println(io)
     println(io, "="^96)
-    println(io, " NOTE  The No/Low deployment rows of the LCOH table run off the figure's")
-    println(io, " y-axis from 2033 and reach the model's zero-fleet sentinel by 2037. See the")
-    println(io, " header of fig_scenario_matrix_overlay_spread.txt before quoting them.")
+    for l in wrap(EXCLUDED_NOTE, 94); println(io, " ", l); end
     println(io, "="^96)
 end
 
@@ -167,6 +180,28 @@ end
 
 cell(v, fmt) = v === nothing ? ("—", "—") : (fmt(v[1]), string(round(Int, v[2])))
 
+"""
+    wrap(text, width) -> Vector{String}
+
+Greedy word wrap, so the shared note strings can be reused verbatim in the HTML
+and TSV (where the reader's window does the wrapping) while still respecting the
+fixed-width rules in the .txt.
+"""
+function wrap(text, width)
+    lines, cur = String[], ""
+    for w in split(text)
+        if isempty(cur)
+            cur = w
+        elseif length(cur) + 1 + length(w) <= width
+            cur *= " " * w
+        else
+            push!(lines, cur); cur = w
+        end
+    end
+    isempty(cur) || push!(lines, cur)
+    return lines
+end
+
 function write_tsv(io)
     for t in TABLES
         println(io, t.title, "\t", t.unit)
@@ -184,6 +219,7 @@ function write_tsv(io)
         println(io)
     end
     println(io, CAVEAT)
+    println(io, EXCLUDED_NOTE)
 end
 
 function write_html(io)
@@ -220,6 +256,7 @@ function write_html(io)
         println(io, "</table>")
     end
     println(io, "<p class=\"note\">", CAVEAT, "</p>")
+    println(io, "<p class=\"note\">", EXCLUDED_NOTE, "</p>")
 end
 
 report(stdout)
